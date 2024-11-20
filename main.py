@@ -52,92 +52,74 @@ class PreProcessor():
 
 
 
+def remove_floating_comments(src):
+    pos=0
+    return_value =""
 
-
-
-# TODO: 
-# remove OOP this can just be a few functions
-class Parser():
-    def __init__(self,src):
-        self.src=src
-        self.pos=0
-
-    # if it comment should be deleted or not
-    def check_comment_end(self)-> bool:
-        i=1
-        while(self.src[self.pos+i][0:2] == "//"):
+    def check_comment_end()-> bool:
+        i=0
+        while(src[pos+i][0:2] == "//"):
             i+=1
-            if self.pos+i == len(self.src):
+            if pos+i == len(src):
                 return True
+        return src[pos+i]==""
 
 
-        return self.src[self.pos+i]==""
+    while (pos < len(src)):
+        line = src[pos]
+        pos+=1
 
-
-
-    def parse_stage1(self):
-        return_value =""
-
-        #TODO: this needs to be able to handle /**/ syntax
-
-        while (self.pos < len(self.src)):
-            line = self.src[self.pos]
-            self.pos+=1
-
-            if line=="":
-                return_value+= "\n"
-                continue
-
-            if line[0:2] =="//":
-                if self.check_comment_end():
-                    # remove comment
-                    pass
-                else:
-                    # so add comment
-                    return_value += line
-                    return_value+= "\n"
-
-                continue
-
-            if line[0:2] =="/*":
-                while(not "*/" in self.src[self.pos]):
-                    self.pos+=1
-                continue
-
-            if line[0] =="*":
-                continue
-
-            return_value+= line
+        if line=="":
             return_value+= "\n"
+            continue
 
-
-        return return_value
-
-    # stage 2 parse
-    # remove lines that start with #
-    def parse_stage2(self,src):
-        src = src.split(sep="\n")
-        pos=0
-        returnval=""
-
-        processor = PreProcessor(src)
-        processor.read_defines()
-        
-        while (pos < len(src)):
-            line = src[pos]
-            pos+=1
-            if "#include" in line:
-                continue
-            if "#define" in line:
-                continue
-            if line =="":
-                returnval+="\n"
+        if line[0:2] =="//":
+            if check_comment_end():
+                # remove comment
+                pass
             else:
-               returnval += processor.expand(line)
-               returnval+="\n"
-               
+                #keep comment
+                return_value += line
+                return_value+= "\n"
+            continue
 
-        return returnval
+        if line[0:2] =="/*":
+            while(not "*/" in src[pos]):
+                pos+=1
+            continue
+        if line[0] =="*":
+            continue
+
+        return_value+= line
+        return_value+= "\n"
+
+    return return_value
+
+
+
+def removeDefinitions(src):
+    src = src.split(sep="\n")
+    pos=0
+    returnval=""
+
+    processor = PreProcessor(src)
+    processor.read_defines()
+    
+    while (pos < len(src)):
+        line = src[pos]
+        pos+=1
+        if "#include" in line:
+            continue
+        if "#define" in line:
+            continue
+        if line =="":
+            returnval+="\n"
+        else:
+           returnval += processor.expand(line)
+           returnval+="\n"
+           
+
+    return returnval
 
 
 
@@ -155,18 +137,15 @@ def main():
 
     output=output.split(sep="\n")
 
-    parser = Parser(output)
-    totalout = parser.parse_stage1()
-    totalout = parser.parse_stage2(totalout)
+    totalout = remove_floating_comments(output)
+    totalout = removeDefinitions(totalout)
 
-    parser2 = Parser(totalout.split(sep="\n"))
-    totalout= parser2.parse_stage1()
+    totalout = remove_floating_comments(totalout.split(sep="\n"))
 
     #remove leading and trailing whitespace from totalout
     totalout = totalout.strip()
 
     print(totalout)
-
 
 
 
