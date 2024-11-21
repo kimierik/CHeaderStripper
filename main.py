@@ -126,14 +126,42 @@ def removeDefinitions(src):
     return returnval
 
 
+def remove_typedef(src):
+    pos=0
+    returnval=""
+
+    while (pos < len(src)):
+        line = src[pos]
+        pos+=1
+
+        if line.strip()[0:7]=="typedef":
+            nl = line
+            while (nl != "}"):
+                pos+=1
+                tmp = src[pos]
+                if tmp == "":
+                    continue
+                nl=tmp[0]
+            pos+=1
+            continue
+
+
+        returnval+= src[pos-1]
+        returnval+= "\n"
+
+    return returnval
+
+
 
 def main():
 
     arg_parser=argparse.ArgumentParser( prog="Header Stripper", description="Strips C headers")
 
     arg_parser.add_argument("-f","--filename",help="input filename",required=True)
+    arg_parser.add_argument("-o","--output",help="output filename, default = out.h",default="out.h")
     arg_parser.add_argument("-d","--define",help="all definitions to give to gcc",nargs="+")
     arg_parser.add_argument("--remove-comments",help="remove all comments",action="store_true")
+    arg_parser.add_argument("--remove-typedef",help="remove all typedefs",action="store_true")
 
     args = arg_parser.parse_args()
 
@@ -161,12 +189,19 @@ def main():
     output = output.split(sep="\n")
     output = remove_floating_comments(output)
     output = removeDefinitions(output)
+
+    if args.remove_typedef:
+        output = remove_typedef(output.split(sep="\n"))
+
     output = remove_floating_comments(output.split(sep="\n"))
 
     #remove leading and trailing whitespace from output
     output = output.strip()
 
-    print(output)
+    with open(args.output,'w') as f:
+        f.write(output)
+    
+    
 
 
 
