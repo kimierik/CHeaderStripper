@@ -20,6 +20,7 @@ freely, subject to the following restrictions:
 """
 
 import subprocess
+import argparse
 
 
 class PreProcessor():
@@ -112,11 +113,14 @@ def removeDefinitions(src):
             continue
         if "#define" in line:
             continue
+
         if line =="":
             returnval+="\n"
         else:
-           returnval += processor.expand(line)
-           returnval+="\n"
+            if line[0]=="#":
+                continue
+            returnval += processor.expand(line)
+            returnval+="\n"
            
 
     return returnval
@@ -124,28 +128,45 @@ def removeDefinitions(src):
 
 
 def main():
-    filename="raygui.h"
 
-    r = subprocess.run(
-            ["gcc","-E","-nostdinc","-P","-C","-traditional-cpp",filename],
+    arg_parser=argparse.ArgumentParser( prog="Header Stripper", description="Strips C headers")
+
+    arg_parser.add_argument("-f","--filename",help="input filename",required=True)
+    arg_parser.add_argument("-d","--define",help="all definitions to give to gcc",nargs="+")
+    arg_parser.add_argument("--remove-comments",help="remove all comments",action="store_true")
+
+    args = arg_parser.parse_args()
+
+    gcc_command = ["gcc","-E","-nostdinc",]
+    if not args.remove_comments:
+        gcc_command.append("-C")
+
+    if args.define:
+        for define in args.define:
+            gcc_command.append(f"-D{define}")
+
+    gcc_command.append(args.filename)
+
+
+    result = subprocess.run(
+            gcc_command,
             capture_output=True,
             text=True)
 
-    output = r.stdout
+    if result.returncode != 0:
+        print("error executing",gcc_command)
+        print(result.stderr)
 
-    totalout=""
+    output = result.stdout
+    output = output.split(sep="\n")
+    output = remove_floating_comments(output)
+    output = removeDefinitions(output)
+    output = remove_floating_comments(output.split(sep="\n"))
 
-    output=output.split(sep="\n")
+    #remove leading and trailing whitespace from output
+    output = output.strip()
 
-    totalout = remove_floating_comments(output)
-    totalout = removeDefinitions(totalout)
-
-    totalout = remove_floating_comments(totalout.split(sep="\n"))
-
-    #remove leading and trailing whitespace from totalout
-    totalout = totalout.strip()
-
-    print(totalout)
+    print(output)
 
 
 
