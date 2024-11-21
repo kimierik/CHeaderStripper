@@ -44,8 +44,12 @@ class PreProcessor():
                 r = line.strip()
                 r= r[7:]# remove #define 
                 r = r.split()
-                if r[1] == "//":
-                    r[1]=""
+
+                if len(r)>=2:
+                    if r[1] == "//":
+                        r[1]=""
+                else:
+                    r.append("")
 
                 self.defines[r[0]]=r[1]
                 continue
@@ -99,7 +103,7 @@ def remove_floating_comments(src):
 
 
 def removeDefinitions(src):
-    src = src.split(sep="\n")
+    
     pos=0
     returnval=""
 
@@ -152,6 +156,19 @@ def remove_typedef(src):
     return returnval
 
 
+def remove_include_directive(src):
+    pos=0
+    returnval=""
+
+    while (pos < len(src)):
+        line = src[pos]
+        pos+=1
+        if "#include" in line:
+            continue
+        returnval+=line
+    return returnval
+
+
 
 def main():
 
@@ -165,6 +182,13 @@ def main():
 
     args = arg_parser.parse_args()
 
+    # read file first, remove #include directive, give to gcc
+    file = open(args.filename)
+    raw_content = file.readlines()
+    file.close()
+    # this fn cannot be used here
+    strippedContent = remove_include_directive(raw_content)
+
     gcc_command = ["gcc","-E","-nostdinc",]
     if not args.remove_comments:
         gcc_command.append("-C")
@@ -173,12 +197,12 @@ def main():
         for define in args.define:
             gcc_command.append(f"-D{define}")
 
-    gcc_command.append(args.filename)
-
+    gcc_command.append("-")
 
     result = subprocess.run(
             gcc_command,
             capture_output=True,
+            input=strippedContent,
             text=True)
 
     if result.returncode != 0:
@@ -188,7 +212,7 @@ def main():
     output = result.stdout
     output = output.split(sep="\n")
     output = remove_floating_comments(output)
-    output = removeDefinitions(output)
+    output = removeDefinitions(output.split(sep="\n"))
 
     if args.remove_typedef:
         output = remove_typedef(output.split(sep="\n"))
