@@ -1,3 +1,4 @@
+#!/bin/python
 """
 License : zlib/libpng
 Copyright (c) 2024 Kimi Malkamäki (@kimierik)
@@ -177,8 +178,8 @@ def main():
     arg_parser.add_argument("-f","--filename",help="input filename",required=True)
     arg_parser.add_argument("-o","--output",help="output filename, default = out.h",default="out.h")
     arg_parser.add_argument("-d","--define",help="all definitions to give to gcc",nargs="+")
-    arg_parser.add_argument("--remove-comments",help="remove all comments",action="store_true")
-    arg_parser.add_argument("--remove-typedef",help="remove all typedefs",action="store_true")
+    arg_parser.add_argument("--remove-comments",help="remove all comments from output",action="store_true")
+    arg_parser.add_argument("--remove-typedef",help="remove all typedefs from output",action="store_true")
 
     args = arg_parser.parse_args()
 
