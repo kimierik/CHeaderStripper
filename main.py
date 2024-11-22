@@ -20,8 +20,11 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 """
 
+from os import sep
 import subprocess
 import argparse
+
+import re
 
 
 class PreProcessor():
@@ -41,7 +44,7 @@ class PreProcessor():
         for line in self.src:
             if "#include" in line:
                 continue
-            if "#define" in line:
+            if line.strip()[0:len("#define")] == "#define":
                 r = line.strip()
                 r= r[7:]# remove #define 
                 r = r.split()
@@ -110,6 +113,7 @@ def removeDefinitions(src):
 
     processor = PreProcessor(src)
     processor.read_defines()
+    #print(processor.defines)
     
     while (pos < len(src)):
         line = src[pos]
@@ -170,6 +174,64 @@ def remove_include_directive(src):
     return returnval
 
 
+def remove_function_definitions(src):
+    returnval=""
+
+    rgx = "\\b([a-zA-Z_]+)\\s([a-zA-Z_]+)\\s*\\(([^)]*)\\)\\s*[\\{|\\s]"  #:\\:} 
+    
+
+    #ranges to ignore would be characteers not fking things
+    ranges_to_ignore=[]
+
+    # dont to finiter just find from each line that will give us what we want
+    # the problem is that we cannot find the \n{ if we do that idk if we just ignore { and force that there is euther { or nothing 
+
+    x = re.finditer(rgx,src)
+    src = src.split(sep="\n")
+
+    for item in x:
+        print(item)
+        start=item.start()
+        pos = start
+        num_of_squerly=0
+        # read lines and cound num of { and }
+        while (num_of_squerly > 0):
+            
+            num_of_squerly+= src[pos].count("{")
+            num_of_squerly-= src[pos].count("}")
+            pos+=1
+        #start - pos are indexes of lines that we do not add
+        ranges_to_ignore.append((start,pos))
+
+    print("ignoring ranges", ranges_to_ignore)
+
+
+
+    pos=0
+
+    def jump_over_ignore(pos):
+        if len(ranges_to_ignore)>=0:
+            return
+        if pos >= ranges_to_ignore[0][0]:
+            pos = ranges_to_ignore[0][1]
+            ranges_to_ignore.remove(ranges_to_ignore[0])
+
+    while (pos>=len(src[pos])):
+        jump_over_ignore(pos)
+        line = src[pos]
+        returnval+=line
+        returnval+="\n"
+        pos+=1
+
+        #if pos is within ignored ranges 
+
+        
+
+
+
+
+    return returnval
+
 
 def main():
 
@@ -180,6 +242,7 @@ def main():
     arg_parser.add_argument("-d","--define",help="all definitions to give to gcc",nargs="+")
     arg_parser.add_argument("--remove-comments",help="remove all comments from output",action="store_true")
     arg_parser.add_argument("--remove-typedef",help="remove all typedefs from output",action="store_true")
+    arg_parser.add_argument("--remove-function-definitions",help="remove all function definitions from output",action="store_true")
 
     args = arg_parser.parse_args()
 
@@ -190,7 +253,7 @@ def main():
     # this fn cannot be used here
     strippedContent = remove_include_directive(raw_content)
 
-    gcc_command = ["gcc","-E","-nostdinc",]
+    gcc_command = ["gcc","-E","-nostdinc","-fwhole-program"]
     if not args.remove_comments:
         gcc_command.append("-C")
 
@@ -217,6 +280,9 @@ def main():
 
     if args.remove_typedef:
         output = remove_typedef(output.split(sep="\n"))
+
+    if args.remove_function_definitions:
+        output = remove_function_definitions(output)
 
     output = remove_floating_comments(output.split(sep="\n"))
 
