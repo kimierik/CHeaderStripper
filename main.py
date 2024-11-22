@@ -174,63 +174,32 @@ def remove_include_directive(src):
     return returnval
 
 
-def remove_function_definitions(src):
-    returnval=""
+def remove_function_definitions(src:str):
+    returnval=src
 
-    rgx = "\\b([a-zA-Z_]+)\\s([a-zA-Z_]+)\\s*\\(([^)]*)\\)\\s*[\\{|\\s]"  #:\\:} 
-    
+    # regex to find function definitions 
+    rgx = "\\b((static|inline|const)\\s*)*\\s*([a-zA-Z_0-9\\*]+)\\s+([a-zA-Z_0-9\\*]+)\\s*\\(([^)]*)\\)\\s*\\{"#:}
 
-    #ranges to ignore would be characteers not fking things
-    ranges_to_ignore=[]
+    a = re.search(rgx,returnval)
 
-    # dont to finiter just find from each line that will give us what we want
-    # the problem is that we cannot find the \n{ if we do that idk if we just ignore { and force that there is euther { or nothing 
-
-    x = re.finditer(rgx,src)
-    src = src.split(sep="\n")
-
-    for item in x:
-        print(item)
-        start=item.start()
-        pos = start
-        num_of_squerly=0
-        # read lines and cound num of { and }
-        while (num_of_squerly > 0):
-            
-            num_of_squerly+= src[pos].count("{")
-            num_of_squerly-= src[pos].count("}")
+    while (a != None):
+        end = a.end()
+        pos=end+1
+        brace_count = 1
+        while(brace_count>0):
+            if ( pos >= len(returnval)):
+                return returnval[:a.start()-1] + returnval[pos:]
+            brace_count += 1 if (returnval[pos]=="{") else 0
+            brace_count -= 1 if (returnval[pos]=="}") else 0
             pos+=1
-        #start - pos are indexes of lines that we do not add
-        ranges_to_ignore.append((start,pos))
+        #
+        returnval = returnval[:a.start()-1] + returnval[pos:]
 
-    print("ignoring ranges", ranges_to_ignore)
-
-
-
-    pos=0
-
-    def jump_over_ignore(pos):
-        if len(ranges_to_ignore)>=0:
-            return
-        if pos >= ranges_to_ignore[0][0]:
-            pos = ranges_to_ignore[0][1]
-            ranges_to_ignore.remove(ranges_to_ignore[0])
-
-    while (pos>=len(src[pos])):
-        jump_over_ignore(pos)
-        line = src[pos]
-        returnval+=line
-        returnval+="\n"
-        pos+=1
-
-        #if pos is within ignored ranges 
-
-        
-
-
-
+        a = re.search(rgx,returnval)
 
     return returnval
+
+
 
 
 def main():
