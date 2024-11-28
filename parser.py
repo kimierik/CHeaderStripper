@@ -56,21 +56,40 @@ def tokenize_stage1(src:str) -> List[Stage1Token]:
 
     tokenList=[]
 
-    while(str_position< len(src)):
+    while(str_position < len(src)):
         char = src[str_position]
 
         match char:
             case char if char.isalpha():
                 #start parsing identifier 
-                pass
+                s=""
+                while (src[str_position].isalpha()):
+                    s+=src[str_position]
+                    str_position+=1
+
+                tokenList.append(Stage1Token(str_position,"Identifier",s))
+                #end 
 
             case char if char.isnumeric():
                 #start parsin num literal
-                pass
+                s=""
+                while (src[str_position].isnumeric()):
+                    s+=src[str_position]
+                    str_position+=1
+
+                tokenList.append(Stage1Token(str_position,"Literal",s))
+                #end 
 
             case "\"":
                 #start parsin string literal
-                pass
+                s=""
+                str_position+=1
+                while ( src[str_position] is not "\"" ):
+                    s+=src[str_position]
+                    str_position+=1
+
+                tokenList.append(Stage1Token(str_position,"Literal",s))
+                #end
 
             case ";":
                 tokenList.append(Stage1Token(str_position,"Semicolon",None))
@@ -106,9 +125,12 @@ def tokenize_stage1(src:str) -> List[Stage1Token]:
             case "}":
                 tokenList.append(Stage1Token(str_position,"CloseSquirly",None))
 
+            case "\n":
+                tokenList.append(Stage1Token(str_position,"LineBreak","\n"))
+
 
             case _:
-                tokenList.append(Stage1Token(str_position,"Illegal",""))
+                tokenList.append(Stage1Token(str_position,"Illegal",None))
             # end of match statement
 
         #end of while loop
@@ -217,5 +239,5 @@ def main():
 
 
 
-if __name__ =="__main__":
+if __name__ == "__main__" :
     main()
