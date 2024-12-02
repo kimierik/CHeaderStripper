@@ -29,6 +29,7 @@ Literal
 Comma
 Semicolon
 Operator
+Eguals
 
 Comparator
 
@@ -43,6 +44,13 @@ class Stage1Token():
         self.src_pos=pos
         self.token_type=token_type
         self.value=value
+
+    def print(self):
+        if self.token_type=="Illegal":
+            print("token:",self.token_type,"\"","val:",self.value,"\"")
+        else:
+            print("token:",self.token_type,"val:",self.value)
+
         
 
 
@@ -84,7 +92,7 @@ def tokenize_stage1(src:str) -> List[Stage1Token]:
                 #start parsin string literal
                 s=""
                 str_position+=1
-                while ( src[str_position] is not "\"" ):
+                while ( src[str_position] != "\"" ):
                     s+=src[str_position]
                     str_position+=1
 
@@ -100,10 +108,10 @@ def tokenize_stage1(src:str) -> List[Stage1Token]:
             case ">" | "==" | "<=" | ">=" | "<" :
                 tokenList.append(Stage1Token(str_position,"Comparator",char))
 
-            case "-" | "*" | "/" | "+" :
+            case "-" | "*" | "/" | "+" | "|" | "<" | ">" | "&":
                 tokenList.append(Stage1Token(str_position,"Operator",char))
 
-            case "//":
+            case "//": # this does not work
                 tokenList.append(Stage1Token(str_position,"CommentStart",None))
 
             case "/*":
@@ -125,13 +133,17 @@ def tokenize_stage1(src:str) -> List[Stage1Token]:
             case "}":
                 tokenList.append(Stage1Token(str_position,"CloseSquirly",None))
 
+            case "=":
+                tokenList.append(Stage1Token(str_position,"Equals",char))
+
             case "\n":
                 tokenList.append(Stage1Token(str_position,"LineBreak","\n"))
 
 
             case _:
-                tokenList.append(Stage1Token(str_position,"Illegal",None))
+                tokenList.append(Stage1Token(str_position,"Illegal",char))
             # end of match statement
+        str_position+=1
 
         #end of while loop
 
@@ -234,7 +246,12 @@ def main():
     # parse stage2
     # get options on what to do with the content of the file
     # write to out
-    pass
+    f = open("raygui.h")
+    s = f.read()
+    f.close()
+    tl = tokenize_stage1(s)
+    for i in tl:
+        i.print()
 
 
 
